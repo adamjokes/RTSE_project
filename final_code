@@ -1,0 +1,78 @@
+#define BLYNK_PRINT Serial
+
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
+#include <LiquidCrystal_I2C.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+ 
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+char auth[] = "";
+char ssid[] = "";
+char pass[] = "";
+
+void setup() {
+  Serial.begin(9600);
+  mlx.begin();
+  lcd.init();
+  lcd.backlight();
+
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, pass);
+  int wifi_ctr = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("WiFi connected");  
+
+  Blynk.begin(auth, ssid, pass);
+  
+  lcd.setCursor(0,0);
+  lcd.print("CT Sensor");
+  lcd.setCursor(0,1);
+  lcd.print("By Simp Police");
+}
+
+BLYNK_WRITE(V5) {
+  int pinValue = param.asInt();
+
+  Serial.println("Button pressed!");
+
+//  Serial.print("Ambient = "); Serial.print(mlx.readAmbientTempC()); 
+//  Serial.print("*C\tObject = "); Serial.print(mlx.readObjectTempC()); Serial.println("*C");
+//  Serial.print("Ambient = "); Serial.print(mlx.readAmbientTempF()); 
+//  Serial.print("*F\tObject = "); Serial.print(mlx.readObjectTempF()); Serial.println("*F");
+//
+//  Serial.println();
+
+  double temp = mlx.readObjectTempC();
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Temperature");
+  lcd.setCursor(0,1);
+  lcd.print(temp);
+  lcd.setCursor(5,1);
+  lcd.print("*C");
+
+  Blynk.virtualWrite(V6, temp);
+  Blynk.virtualWrite(V7, 1);
+
+  delay(3000);
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("CT Sensor");
+  lcd.setCursor(0,1);
+  lcd.print("By Simp Police");
+}
+
+void loop() {
+  Blynk.run();
+}
